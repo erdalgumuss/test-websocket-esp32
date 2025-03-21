@@ -19,7 +19,7 @@ export enum SampleRate {
 
 export class AudioManager {
     private configMediumDef: AudioConfig = {
-        sampleRate: 24000,
+        sampleRate: 22050,
         channels: 1,
         bitDepth: 16
     };
@@ -81,8 +81,16 @@ export class AudioManager {
         this.resetRecording();
         
         // Generate random ID for filename
+        const tmpFolder = path.join(__dirname, '../../tmp');
+        if (!fs.existsSync(tmpFolder)) {
+            fs.mkdirSync(tmpFolder, { recursive: true });
+            console.log('Created tmp folder at:', tmpFolder);
+        }
+      
+        // Generate random ID for filename
         const randomId = Math.random().toString(36).substring(2, 15);
-        const filename = path.join(__dirname, '../../tmp', `recording-${randomId}.wav`);
+        const filename = path.join(tmpFolder, `recording-${randomId}.wav`);
+
         
         // Initialize new file writer with random filename
         this.initializeFileWriter(filename);
@@ -92,7 +100,7 @@ export class AudioManager {
     private audioBuffer: Buffer = Buffer.alloc(0);
     private readonly WRITE_DELAY = 500; // Reduced to 500ms for more responsive writes
     private readonly MAX_BUFFER_SIZE = 1024 * 1024; // 1MB max buffer size to prevent memory issues
-    private readonly MIN_BUFFER_SIZE = this.config.sampleRate; // 1 second worth of audio data
+    private readonly MIN_BUFFER_SIZE = 16384; // 1 second worth of audio data
 
     public handleAudioBuffer(buffer: Buffer): void {
         try {
@@ -222,9 +230,9 @@ export class AudioManager {
         const processedSamples = new Int16Array(samples.length);
         const GAIN = 0.1; // Gain factor for normalization
         // Reduce normalization intensity
-        const normalizeRatio = maxAmplitude > 0 ? (32767 / maxAmplitude) * GAIN : 1;
+        const normalizeRatio = maxAmplitude > 0 ? (16382 / maxAmplitude) * GAIN : 1;
         const noiseFloor = 15; // Increased noise floor
-        const maxVal = 32767 * 0.6; // Reduced maximum value to prevent clipping
+        const maxVal = 16382 * 0.6; // Reduced maximum value to prevent clipping
         
         let prevSample = 0; // For simple low-pass filter
         const smoothingFactor = 0.1; // Adjust between 0 and 1
